@@ -1,14 +1,19 @@
 use reqwest::header::{HeaderValue, USER_AGENT};
-use reqwest::{header, Body, RequestBuilder, Url};
+use reqwest::{header, Body, Method, RequestBuilder, Url};
 use serde::Serialize;
 use std::error::Error;
 
-use crate::api_endpoint::{SearchEndpoint, UsersEndpoint};
+use crate::api_endpoint::{
+    BlocksEndpoint, DatabasesEndpoint, PagesEndpoint, SearchEndpoint, UsersEndpoint,
+};
 use crate::NOTION_ENDPOINT;
 use std::sync::Arc;
 
 pub struct NotionClient {
     pub users: UsersEndpoint,
+    pub databases: DatabasesEndpoint,
+    pub pages: PagesEndpoint,
+    pub blocks: BlocksEndpoint,
     search: SearchEndpoint,
 }
 
@@ -21,8 +26,17 @@ impl NotionClient {
         let base_client = Arc::new(BaseClient::try_new(token, notion_version, user_agent)?);
 
         let users = UsersEndpoint::new(&base_client);
+        let databases = DatabasesEndpoint::new(&base_client);
+        let pages = PagesEndpoint::new(&base_client);
+        let blocks = BlocksEndpoint::new(&base_client);
         let search = SearchEndpoint::new(&base_client);
-        Ok(Self { users, search })
+        Ok(Self {
+            users,
+            databases,
+            pages,
+            blocks,
+            search,
+        })
     }
 
     pub fn search<B>(&self, params: Option<B>) -> Result<RequestBuilder, reqwest::Error>
@@ -71,7 +85,7 @@ impl BaseClient {
     pub fn request<Q, B>(
         &self,
         path: &str,
-        method: reqwest::Method,
+        method: Method,
         query: Option<&Q>,
         body: Option<B>,
     ) -> Result<RequestBuilder, reqwest::Error>
@@ -95,5 +109,25 @@ impl BaseClient {
         };
 
         Ok(qb)
+    }
+
+    pub fn retrive(&self, path: &str) -> Result<RequestBuilder, reqwest::Error> {
+        Ok(self
+            .client
+            .request(Method::GET, self.url.join(path).unwrap()))
+    }
+
+    pub fn create<B>(&self, path: &str, body: Option<B>) -> Result<RequestBuilder, reqwest::Error>
+    where
+        B: Into<Body>,
+    {
+        self.request(path, Method::POST, None::<&str>, body)
+    }
+
+    pub fn update<B>(&self, path: &str, body: Option<B>) -> Result<RequestBuilder, reqwest::Error>
+    where
+        B: Into<Body>,
+    {
+        self.request(path, Method::PATCH, None::<&str>, body)
     }
 }

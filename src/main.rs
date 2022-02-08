@@ -24,9 +24,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .text()
             .await?
     );
-    let search_params = Params::new()
-        .with_query("task".to_string())
-        .with_filter(Filter::new(FilterValue::Page));
+    let search_params = Params::new().with_filter(Filter::new(FilterValue::Database));
     dbg!(serde_json::from_str::<Value>(
         &client
             .search(Some(search_params))?
@@ -37,5 +35,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     )
     .unwrap());
     // dbg!(serde_json::to_string(&search_params));
+
+    dbg!(
+        client
+            .databases
+            .retrive("5a847334-fcf0-42cd-a006-1f38ab0489a2")?
+            .send()
+            .await?
+            .text()
+            .await?
+    );
     Ok(())
 }

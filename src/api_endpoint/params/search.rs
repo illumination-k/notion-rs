@@ -10,13 +10,13 @@ pub enum Order {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum SortChoises {
+pub enum Timestamp {
     LastEditedTime,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct SortParams {
-    timestamp: SortChoises,
+pub struct Sort {
+    timestamp: Timestamp,
     direction: Order,
 }
 
@@ -54,7 +54,7 @@ impl Serialize for Filter {
 #[derive(Debug, Serialize)]
 pub struct Params {
     #[serde(skip_serializing_if = "Option::is_none")]
-    sort: Option<SortParams>,
+    sort: Option<Sort>,
     #[serde(skip_serializing_if = "Option::is_none")]
     filter: Option<Filter>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -63,6 +63,12 @@ pub struct Params {
     page_size: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     start_cursor: Option<String>,
+}
+
+impl Default for Params {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Params {
@@ -88,10 +94,15 @@ impl Params {
         self.filter = Some(filter);
         self
     }
+
+    pub fn with_sort(mut self, sort: Sort) -> Self {
+        self.sort = Some(sort);
+        self
+    }
 }
 
 impl Into<Body> for Params {
     fn into(self) -> Body {
-        Body::from(serde_json::to_string(&self).unwrap())
+        Body::from(serde_json::to_string(&self).expect("Error Into<Body> in search::Params"))
     }
 }

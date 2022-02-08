@@ -1,19 +1,11 @@
 use reqwest::{Body, Method, RequestBuilder};
-use std::{ops::Deref, sync::Arc};
+use std::ops::Deref;
 
-use crate::client::BaseClient;
+use super::build_endpoint;
 
-pub struct SearchEndpoint {
-    parent: Arc<BaseClient>,
-}
+build_endpoint!(SearchEndpoint);
 
 impl SearchEndpoint {
-    pub(crate) fn new(client: &Arc<BaseClient>) -> Self {
-        Self {
-            parent: Arc::clone(client),
-        }
-    }
-
     pub fn search<B>(&self, params: Option<B>) -> Result<RequestBuilder, reqwest::Error>
     where
         B: Into<Body>,

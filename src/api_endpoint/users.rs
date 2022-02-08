@@ -1,8 +1,7 @@
 use reqwest::{Method, RequestBuilder};
 use serde::{Deserialize, Serialize};
-use std::{ops::Deref, sync::Arc};
 
-use crate::client::BaseClient;
+use super::build_endpoint;
 
 #[derive(Serialize, Deserialize)]
 pub struct ListParams {
@@ -19,38 +18,23 @@ impl Default for ListParams {
     }
 }
 
-pub struct UsersEndpoint {
-    parent: Arc<BaseClient>,
-}
+build_endpoint!(UsersEndpoint);
 
 impl UsersEndpoint {
-    pub(crate) fn new(client: &Arc<BaseClient>) -> Self {
-        Self {
-            parent: Arc::clone(client),
-        }
-    }
-
     pub fn list<Q>(&self, params: Option<&Q>) -> Result<RequestBuilder, reqwest::Error>
     where
         Q: Serialize + ?Sized,
     {
         self.parent
-            .deref()
             .request("users", Method::GET, params, None::<&str>)
     }
 
     pub fn retrive(&self, user_id: &str) -> Result<RequestBuilder, reqwest::Error> {
-        self.parent.deref().request(
-            &format!("users/{}", user_id),
-            Method::GET,
-            None::<&str>,
-            None::<&str>,
-        )
+        self.parent.retrive(&format!("users/{}", user_id))
     }
 
     pub fn me(&self) -> Result<RequestBuilder, reqwest::Error> {
         self.parent
-            .deref()
             .request("users/me", Method::GET, None::<&str>, None::<&str>)
     }
 }

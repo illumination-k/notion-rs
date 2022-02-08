@@ -1,34 +1,37 @@
-use reqwest::header::{USER_AGENT, HeaderValue};
-use reqwest::{header, Body, Url, RequestBuilder};
+use reqwest::header::{HeaderValue, USER_AGENT};
+use reqwest::{header, Body, RequestBuilder, Url};
 use serde::Serialize;
 use std::error::Error;
 
-use std::sync::Arc;
+use crate::api_endpoint::{SearchEndpoint, UsersEndpoint};
 use crate::NOTION_ENDPOINT;
-use crate::api_endpoint::{UsersEndpoint, SearchEndpoint, SearchEndpointParams};
+use std::sync::Arc;
 
 pub struct NotionClient {
     pub users: UsersEndpoint,
-    search: SearchEndpoint
+    search: SearchEndpoint,
 }
 
 impl NotionClient {
-    pub fn try_new(token: &str, notion_version: &str, user_agent: Option<&str>) -> Result<Self, Box<dyn Error>> {
+    pub fn try_new(
+        token: &str,
+        notion_version: &str,
+        user_agent: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
         let base_client = Arc::new(BaseClient::try_new(token, notion_version, user_agent)?);
 
         let users = UsersEndpoint::new(&base_client);
         let search = SearchEndpoint::new(&base_client);
-        Ok(Self {
-            users,
-            search
-        })
+        Ok(Self { users, search })
     }
 
-    pub fn search(&self, params: Option<SearchEndpointParams>) -> Result<RequestBuilder, reqwest::Error> {
+    pub fn search<B>(&self, params: Option<B>) -> Result<RequestBuilder, reqwest::Error>
+    where
+        B: Into<Body>,
+    {
         self.search.search(params)
     }
 }
-
 
 #[derive(Debug, Clone)]
 pub struct BaseClient {
@@ -37,7 +40,11 @@ pub struct BaseClient {
 }
 
 impl BaseClient {
-    pub fn try_new(token: &str, notion_version: &str, user_agent: Option<&str>) -> Result<Self, Box<dyn Error>> {
+    pub fn try_new(
+        token: &str,
+        notion_version: &str,
+        user_agent: Option<&str>,
+    ) -> Result<Self, Box<dyn Error>> {
         let url = Url::parse(NOTION_ENDPOINT)?;
         let mut headers = header::HeaderMap::new();
         let mut auth_value = header::HeaderValue::from_str(token)?;
@@ -81,7 +88,8 @@ impl BaseClient {
         };
 
         let qb = if let Some(body) = body {
-            qb.body(body)
+            qb.header(header::CONTENT_TYPE, "application/json")
+                .body(body)
         } else {
             qb
         };
